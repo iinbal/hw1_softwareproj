@@ -2,7 +2,7 @@ import sys
 
 # Constants
 MIN_K = 1
-MIN_ITER = 2
+MIN_ITER = 1
 MAX_ITER = 1000
 DEFAULT_ITER = 400
 
@@ -15,15 +15,14 @@ def parse_command_line_args():
 
     if len(args) >= 1:
         try:
-            # Handle float inputs like "3.0"
             k_float = float(args[0])
-            k = int(k_float)
-            # Check if it's effectively an integer
-            if k_float != float(k):
+            # Check if it's a valid integer (no fractional part)
+            if k_float != int(k_float):
                 print("An Error Has Occurred")
                 return None, None, None
-            if k < MIN_K:
-                print("Incorrect number of clusters!")
+            k = int(k_float)
+            if k < MIN_K:  # Changed from <= to <
+                print("Incorrect number of clusters!")  # Fixed message
                 return None, None, None
         except ValueError:
             print("An Error Has Occurred")
@@ -31,15 +30,14 @@ def parse_command_line_args():
 
     if len(args) >= 2:
         try:
-            # Handle float inputs like "42.0000"
-            max_iter_float = float(args[1])
-            max_iter = int(max_iter_float)
-            # Check if it's effectively an integer
-            if max_iter_float != float(max_iter):
+            iter_float = float(args[1])
+            # Check if it's a valid integer (no fractional part)
+            if iter_float != int(iter_float):
                 print("An Error Has Occurred")
                 return None, None, None
-            if max_iter < MIN_ITER or max_iter >= MAX_ITER:
-                print("Incorrect maximum iteration!")
+            max_iter = int(iter_float)
+            if max_iter <= MIN_ITER or max_iter >= MAX_ITER:
+                print("Incorrect maximum iteration!")  # Fixed message
                 return None, None, None
         except ValueError:
             print("An Error Has Occurred")
@@ -97,8 +95,8 @@ def validate_vector_dimensions(vectors):
 
 
 def initialize_centroids(vectors, k):
-    if k >= len(vectors):  # Must be strictly less than number of vectors
-        print("Incorrect number of clusters!")
+    if k >= len(vectors): 
+        print("Incorrect number of clusters!")  
         return None, None
 
     centroids = [vectors[i][:] for i in range(k)]
