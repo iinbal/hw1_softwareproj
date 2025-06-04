@@ -2,7 +2,7 @@ import sys
 
 # Constants
 MIN_K = 1
-MIN_ITER = 1
+MIN_ITER = 2
 MAX_ITER = 1000
 DEFAULT_ITER = 400
 
@@ -15,9 +15,15 @@ def parse_command_line_args():
 
     if len(args) >= 1:
         try:
-            k = int(args[0])
-            if k <= MIN_K:
-                print("Invalid number of clusters!")
+            # Handle float inputs like "3.0"
+            k_float = float(args[0])
+            k = int(k_float)
+            # Check if it's effectively an integer
+            if k_float != float(k):
+                print("An Error Has Occurred")
+                return None, None, None
+            if k < MIN_K:
+                print("Incorrect number of clusters!")
                 return None, None, None
         except ValueError:
             print("An Error Has Occurred")
@@ -25,9 +31,15 @@ def parse_command_line_args():
 
     if len(args) >= 2:
         try:
-            max_iter = int(args[1])
-            if max_iter <= MIN_ITER or max_iter >= MAX_ITER:
-                print("Invalid maximum iteration!")
+            # Handle float inputs like "42.0000"
+            max_iter_float = float(args[1])
+            max_iter = int(max_iter_float)
+            # Check if it's effectively an integer
+            if max_iter_float != float(max_iter):
+                print("An Error Has Occurred")
+                return None, None, None
+            if max_iter < MIN_ITER or max_iter >= MAX_ITER:
+                print("Incorrect maximum iteration!")
                 return None, None, None
         except ValueError:
             print("An Error Has Occurred")
@@ -86,7 +98,7 @@ def validate_vector_dimensions(vectors):
 
 def initialize_centroids(vectors, k):
     if k >= len(vectors):  # Must be strictly less than number of vectors
-        print("Invalid number of clusters!")
+        print("Incorrect number of clusters!")
         return None, None
 
     centroids = [vectors[i][:] for i in range(k)]

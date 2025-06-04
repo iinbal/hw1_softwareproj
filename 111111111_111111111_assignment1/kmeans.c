@@ -3,7 +3,7 @@
 #include <math.h>
 /*error occurs 2 and 6 prints twice it needs a change  */
 #define MIN_K 1
-#define MIN_ITER 1
+#define MIN_ITER 2
 #define MAX_ITER 1000
 #define DEFAULT_ITER 400
 #define INITIAL_CAPACITY 10 
@@ -17,7 +17,7 @@ void free_vectors_array(double **vectors, int num_vectors);
 void print_result(double **centroids, int k, int dimension);
 
 int main(int argc, char **argv) {
-      int k, iterations;
+    int k, iterations;
     int num_vectors = 0;
     int dimension = 0;
     double **vectors;
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     }
 
     if (k >= num_vectors) {
-        printf("Invalid number of clusters!\n");
+        printf("Incorrect number of clusters!\n");
         free_vectors_array(vectors, num_vectors);
         return 1;
     }
@@ -43,7 +43,9 @@ int main(int argc, char **argv) {
 }
 
 int validate_input(int argc, char *argv[], int *k, int *iterations) {
-  char *endptr;
+    char *endptr;
+    double k_double;
+    double iter_double;
     long k_long;
     long iter_long;
 
@@ -52,26 +54,43 @@ int validate_input(int argc, char *argv[], int *k, int *iterations) {
         return 0;
     }
 
-    k_long = strtol(argv[1], &endptr, 10);
-    if (*endptr != '\0') {
+    // Try to parse K as double first to handle float inputs
+    k_double = strtod(argv[1], &endptr);
+    if (*endptr != '\0' || k_double != k_double || k_double == HUGE_VAL || k_double == -HUGE_VAL) {
+        printf("An Error Has Occurred\n");
+        return 0;
+    }
+    
+    // Check if it's effectively an integer
+    k_long = (long)k_double;
+    if (k_double != (double)k_long) {
         printf("An Error Has Occurred\n");
         return 0;
     }
 
-    if (k_long <= MIN_K) {
-        printf("Invalid number of clusters!\n");
+    if (k_long < MIN_K) {
+        printf("Incorrect number of clusters!\n");
         return 0;
     }
     *k = (int)k_long;
 
     if (argc == 3) {
-        iter_long = strtol(argv[2], &endptr, 10);
-        if (*endptr != '\0') {
+        // Try to parse iterations as double first to handle float inputs
+        iter_double = strtod(argv[2], &endptr);
+        if (*endptr != '\0' || iter_double != iter_double || iter_double == HUGE_VAL || iter_double == -HUGE_VAL) {
             printf("An Error Has Occurred\n");
             return 0;
         }
-        if (iter_long <= MIN_ITER || iter_long >= MAX_ITER) {
-            printf("Invalid maximum iteration!\n");
+        
+        // Check if it's effectively an integer
+        iter_long = (long)iter_double;
+        if (iter_double != (double)iter_long) {
+            printf("An Error Has Occurred\n");
+            return 0;
+        }
+        
+        if (iter_long < MIN_ITER || iter_long >= MAX_ITER) {
+            printf("Incorrect maximum iteration!\n");
             return 0;
         }
         *iterations = (int)iter_long;
