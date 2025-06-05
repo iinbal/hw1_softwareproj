@@ -9,6 +9,7 @@
 #define INITIAL_CAPACITY 10 
 #define MAX_LINE_LENGTH 1024 
 #define MAX_COORD_LENGTH 100 
+#define EPSILON 0.001
 
 int validate_input(int argc, char *argv[], int *k, int *iterations);
 double **load_input(int *num_vectors_ptr, int *dimension_ptr);
@@ -16,6 +17,7 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
 void free_vectors_array(double **vectors, int num_vectors);
 void print_result(double **centroids, int k, int dimension);
 int is_number(double val);
+double euclidean_distance(double *point1, double *point2, int dimension);
 
 int main(int argc, char **argv) {
     int k, iterations;
@@ -222,32 +224,44 @@ double **load_input(int *num_vectors_ptr, int *dimension_ptr) {
     return vectors;
 }
 
+double euclidean_distance(double *point1, double *point2, int dimension) {
+    double sum = 0.0;
+    double diff;
+    int i;
+    
+    for (i = 0; i < dimension; i++) {
+        diff = point1[i] - point2[i];
+        sum += diff * diff;
+    }
+    
+    return sqrt(sum);
+}
+
 void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterations) {
     double **centroids;
     double **new_centroids_sum;
     int *cluster_counts;
     int *assignments;
-    int *prev_assignments;
     int i = 0;
     int j = 0;
     int iter = 0;
     int c = 0;
     int d = 0;
-    int changes;
     int v = 0;
     int cluster;
     double min_distance_sq; 
     int best_cluster = 0;
     double current_distance_sq = 0.0;
     double diff = 0.0;
+    int converged = 0;
+    double centroid_distance = 0.0;
 
     centroids = malloc(k * sizeof(double*));
     new_centroids_sum = malloc(k * sizeof(double*));
     cluster_counts = calloc(k, sizeof(int));
     assignments = calloc(num_vectors, sizeof(int)); 
-    prev_assignments = calloc(num_vectors, sizeof(int));
 
-    if (!centroids || !new_centroids_sum || !cluster_counts || !assignments || !prev_assignments) {
+    if (!centroids || !new_centroids_sum || !cluster_counts || !assignments) {
         printf("An Error Has Occurred\n");
         if (centroids) {
             for (i = 0; i < k; i++) free(centroids[i]);
@@ -259,7 +273,6 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
         }
         free(cluster_counts);
         free(assignments);
-        free(prev_assignments);
         return;
     }
 
@@ -276,7 +289,6 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
             free(new_centroids_sum);
             free(cluster_counts);
             free(assignments);
-            free(prev_assignments);
             return;
         }
     }
@@ -288,17 +300,11 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
     }
 
     for (iter = 0; iter < iterations; iter++) {
-        changes = 0; 
-
         for (c = 0; c < k; c++) {
             for (d = 0; d < dimension; d++) {
                 new_centroids_sum[c][d] = 0.0;
             }
             cluster_counts[c] = 0;
-        }
-
-        for (v = 0; v < num_vectors; v++) {
-            prev_assignments[v] = assignments[v];
         }
 
         for (v = 0; v < num_vectors; v++) {
@@ -317,10 +323,6 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
                 }
             }
             assignments[v] = best_cluster;
-
-            if (assignments[v] != prev_assignments[v]) {
-                changes+=1;
-            }
         }
 
         for (v = 0; v < num_vectors; v++) {
@@ -331,17 +333,27 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
             cluster_counts[cluster]++;
         }
 
+        converged = 1;
         for (c = 0; c < k; c++) {
             if (cluster_counts[c] > 0) {
                 for (d = 0; d < dimension; d++) {
-                    centroids[c][d] = new_centroids_sum[c][d] / cluster_counts[c];
+                    new_centroids_sum[c][d] /= cluster_counts[c];
+                }
+                
+                centroid_distance = euclidean_distance(centroids[c], new_centroids_sum[c], dimension);
+                if (centroid_distance > EPSILON) {
+                    converged = 0;
+                }
+                
+                for (d = 0; d < dimension; d++) {
+                    centroids[c][d] = new_centroids_sum[c][d];
                 }
             } else {
                 printf("An Error Has Occurred\n");
             }
         }
 
-        if (changes == 0 && iter > 0) { 
+        if (converged && iter > 0) { 
             break;
         }
     }
@@ -355,7 +367,6 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
     free(new_centroids_sum);
     free(cluster_counts);
     free(assignments);
-    free(prev_assignments);
 }
 
 void free_vectors_array(double **vectors, int num_vectors) {
