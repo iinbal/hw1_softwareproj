@@ -1,7 +1,7 @@
 #include <stdio.h>   
 #include <stdlib.h>  
 #include <math.h>
-/*error occurs 2 and 6 prints twice it needs a change  */
+
 #define MIN_K 1
 #define MIN_ITER 1
 #define MAX_ITER 1000
@@ -17,7 +17,7 @@ void free_vectors_array(double **vectors, int num_vectors);
 void print_result(double **centroids, int k, int dimension);
 
 int main(int argc, char **argv) {
-      int k, iterations;
+    int k, iterations;
     int num_vectors = 0;
     int dimension = 0;
     double **vectors;
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     }
 
     if (k >= num_vectors) {
-        printf("Invalid number of clusters!\n");
+        printf("Incorrect number of clusters!\n");
         free_vectors_array(vectors, num_vectors);
         return 1;
     }
@@ -43,38 +43,53 @@ int main(int argc, char **argv) {
 }
 
 int validate_input(int argc, char *argv[], int *k, int *iterations) {
-  char *endptr;
-    long k_long;
-    long iter_long;
+    char *endptr;
+    double k_double;
+    double iter_double;
 
     if (argc < 2 || argc > 3) {
         printf("An Error Has Occurred\n");
         return 0;
     }
 
-    k_long = strtol(argv[1], &endptr, 10);
+    // Parse k as double to handle float inputs
+    k_double = strtod(argv[1], &endptr);
     if (*endptr != '\0') {
         printf("An Error Has Occurred\n");
         return 0;
     }
 
-    if (k_long <= MIN_K) {
-        printf("Invalid number of clusters!\n");
+    // Check if it's a valid integer (no fractional part)
+    if (k_double != floor(k_double)) {
+        printf("An Error Has Occurred\n");
         return 0;
     }
-    *k = (int)k_long;
+
+    if (k_double < MIN_K) {  // Changed from <= to <
+        printf("Incorrect number of clusters!\n");  // Fixed message
+        return 0;
+    }
+    *k = (int)k_double;
 
     if (argc == 3) {
-        iter_long = strtol(argv[2], &endptr, 10);
+        // Parse iterations as double to handle float inputs
+        iter_double = strtod(argv[2], &endptr);
         if (*endptr != '\0') {
             printf("An Error Has Occurred\n");
             return 0;
         }
-        if (iter_long <= MIN_ITER || iter_long >= MAX_ITER) {
-            printf("Invalid maximum iteration!\n");
+
+        // Check if it's a valid integer (no fractional part)
+        if (iter_double != floor(iter_double)) {
+            printf("An Error Has Occurred\n");
             return 0;
         }
-        *iterations = (int)iter_long;
+
+        if (iter_double <= MIN_ITER || iter_double >= MAX_ITER) {
+            printf("Incorrect maximum iteration!\n");  
+            return 0;
+        }
+        *iterations = (int)iter_double;
     } else {
         *iterations = DEFAULT_ITER;
     }
