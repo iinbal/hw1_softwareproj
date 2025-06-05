@@ -52,36 +52,32 @@ int validate_input(int argc, char *argv[], int *k, int *iterations) {
         return 0;
     }
 
-    // Parse k as double to handle float inputs
     k_double = strtod(argv[1], &endptr);
     if (*endptr != '\0') {
-        printf("An Error Has Occurred\n");
+        printf("Incorrect number of clusters!\n");  
         return 0;
     }
 
-    // Check if it's a valid integer (no fractional part)
     if (k_double != floor(k_double)) {
-        printf("An Error Has Occurred\n");
+        printf("Incorrect number of clusters!\n");  
         return 0;
     }
 
-    if (k_double < MIN_K) {  // Changed from <= to <
-        printf("Incorrect number of clusters!\n");  // Fixed message
+    if (k_double < MIN_K) { 
+        printf("Incorrect number of clusters!\n");  
         return 0;
     }
     *k = (int)k_double;
 
     if (argc == 3) {
-        // Parse iterations as double to handle float inputs
         iter_double = strtod(argv[2], &endptr);
         if (*endptr != '\0') {
-            printf("An Error Has Occurred\n");
+            printf("Incorrect maximum iteration!\n");  
             return 0;
         }
 
-        // Check if it's a valid integer (no fractional part)
         if (iter_double != floor(iter_double)) {
-            printf("An Error Has Occurred\n");
+            printf("Incorrect maximum iteration!\n");  
             return 0;
         }
 
