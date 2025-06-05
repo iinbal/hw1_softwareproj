@@ -15,3 +15,4 @@ double **load_input(const char *filename, int *num_vectors_out, int *dimension_o
 void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterations);
 void free_vectors_array(double **vectors, int num_vectors);
 void print_result(double **centroids, int k, int dimension);
+int is_number(double val);

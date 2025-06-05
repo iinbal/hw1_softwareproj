@@ -15,6 +15,7 @@ double **load_input(int *num_vectors_ptr, int *dimension_ptr);
 void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterations);
 void free_vectors_array(double **vectors, int num_vectors);
 void print_result(double **centroids, int k, int dimension);
+int is_number(double val);
 
 int main(int argc, char **argv) {
     int k, iterations;
@@ -58,6 +59,10 @@ int validate_input(int argc, char *argv[], int *k, int *iterations) {
         return 0;
     }
 
+    if (!is_number(k_double)) {
+    printf("Incorrect number of clusters!\n");
+    return 0;
+}
     if (k_double != floor(k_double)) {
         printf("Incorrect number of clusters!\n");  
         return 0;
@@ -88,6 +93,14 @@ int validate_input(int argc, char *argv[], int *k, int *iterations) {
         *iterations = (int)iter_double;
     } else {
         *iterations = DEFAULT_ITER;
+    }
+
+    return 1;
+}
+
+int is_number(double val) {
+    if (val != val || val == HUGE_VAL || val == -HUGE_VAL) {
+        return 0;
     }
 
     return 1;

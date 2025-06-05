@@ -15,28 +15,40 @@ def parse_command_line_args():
 
     if len(args) >= 1:
         try:
+            if (not is_number(args[0])):
+                print("Incorrect number of clusters!")  
+                return None, None, None
+            
             k_float = float(args[0])
             if k_float != int(k_float):
                 print("Incorrect number of clusters!")  
                 return None, None, None
+            
             k = int(k_float)
             if k < MIN_K:  
                 print("Incorrect number of clusters!") 
                 return None, None, None
+            
         except ValueError:
             print("An Error Has Occurred")
             return None, None, None
 
     if len(args) >= 2:
         try:
+            if not is_number(args[1]):
+                print("Incorrect maximum iteration!")
+                return None, None, None
+            
             iter_float = float(args[1])
             if iter_float != int(iter_float):
-                print("An Error Has Occurred")
+                print("Incorrect maximum iteration!")
                 return None, None, None
+            
             max_iter = int(iter_float)
             if max_iter <= MIN_ITER or max_iter >= MAX_ITER:
                 print("Incorrect maximum iteration!")  
                 return None, None, None
+            
         except ValueError:
             print("An Error Has Occurred")
             return None, None, None
@@ -46,6 +58,19 @@ def parse_command_line_args():
 
     return k, max_iter, file_arg
 
+def is_number(s):
+    if s is None or s.strip() == '':
+        return False
+    try:
+        val = float(s)
+    except ValueError:
+        return False
+    
+    lower_s = s.strip().lower()
+    if lower_s == 'nan' or lower_s == 'inf' or lower_s == '+inf' or lower_s == '-inf':
+        return False
+
+    return True
 
 def read_vectors(file_arg=None):
     vectors = []
