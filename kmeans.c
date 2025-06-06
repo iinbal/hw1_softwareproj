@@ -263,17 +263,16 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
 
     if (!centroids || !new_centroids_sum || !cluster_counts || !assignments) {
         printf("An Error Has Occurred\n");
-        if (centroids) {
-            for (i = 0; i < k; i++) free(centroids[i]);
-            free(centroids);
-        }
-        if (new_centroids_sum) {
-            for (i = 0; i < k; i++) free(new_centroids_sum[i]);
-            free(new_centroids_sum);
-        }
+        if (centroids) free(centroids);
+        if (new_centroids_sum) free(new_centroids_sum);
         free(cluster_counts);
         free(assignments);
         return;
+    }
+
+    for (i = 0; i < k; i++) {
+        centroids[i] = NULL;
+        new_centroids_sum[i] = NULL;
     }
 
     for (i = 0; i < k; i++) {
@@ -281,9 +280,9 @@ void kmeans(double **vectors, int num_vectors, int dimension, int k, int iterati
         new_centroids_sum[i] = malloc(dimension * sizeof(double));
         if (!centroids[i] || !new_centroids_sum[i]) {
             printf("An Error Has Occurred\n");
-            for (j = 0; j < i; j++) {
-                free(centroids[j]);
-                free(new_centroids_sum[j]);
+            for (j = 0; j < k; j++) {
+                if (centroids[j]) free(centroids[j]);
+                if (new_centroids_sum[j]) free(new_centroids_sum[j]);
             }
             free(centroids);
             free(new_centroids_sum);
