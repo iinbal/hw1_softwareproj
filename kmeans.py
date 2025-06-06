@@ -6,58 +6,6 @@ MIN_ITER = 1
 MAX_ITER = 1000
 DEFAULT_ITER = 400
 
-def parse_command_line_args():
-    args = sys.argv[1:]
-
-    k = None
-    max_iter = DEFAULT_ITER
-    file_arg = None
-
-    if len(args) >= 1:
-        try:
-            if (not is_number(args[0])):
-                print("Incorrect number of clusters!")  
-                return None, None, None
-            
-            k_float = float(args[0])
-            if k_float != int(k_float):
-                print("Incorrect number of clusters!")  
-                return None, None, None
-            
-            k = int(k_float)
-            if k < MIN_K:  
-                print("Incorrect number of clusters!") 
-                return None, None, None
-            
-        except ValueError:
-            print("An Error Has Occurred")
-            return None, None, None
-
-    if len(args) >= 2:
-        try:
-            if not is_number(args[1]):
-                print("Incorrect maximum iteration!")
-                return None, None, None
-            
-            iter_float = float(args[1])
-            if iter_float != int(iter_float):
-                print("Incorrect maximum iteration!")
-                return None, None, None
-            
-            max_iter = int(iter_float)
-            if max_iter <= MIN_ITER or max_iter >= MAX_ITER:
-                print("Incorrect maximum iteration!")  
-                return None, None, None
-            
-        except ValueError:
-            print("An Error Has Occurred")
-            return None, None, None
-
-    if len(args) >= 3:
-        file_arg = args[2]
-
-    return k, max_iter, file_arg
-
 def is_number(s):
     if s is None or s.strip() == '':
         return False
@@ -65,135 +13,156 @@ def is_number(s):
         val = float(s)
     except ValueError:
         return False
-    
     lower_s = s.strip().lower()
-    if lower_s == 'nan' or lower_s == 'inf' or lower_s == '+inf' or lower_s == '-inf':
-        return False
+    return lower_s not in {'nan', 'inf', '+inf', '-inf'}
 
-    return True
+#Command line parsing
+
+def parse_command_line_args():
+    args = sys.argv[1:]
+
+    if not args:
+        return None, None, None
+
+    k = parse_k_arg(args[0])
+    if k is None:
+        return None, None, None
+
+    max_iter = parse_iter_arg(args[1]) if len(args) > 1 else DEFAULT_ITER
+    if max_iter is None:
+        return None, None, None
+
+    file_arg = args[2] if len(args) > 2 else None
+    return k, max_iter, file_arg
+
+def parse_k_arg(arg):
+    if not is_number(arg):
+        print("Incorrect number of clusters!")
+        return None
+    k_float = float(arg)
+    if k_float != int(k_float) or int(k_float) < MIN_K:
+        print("Incorrect number of clusters!")
+        return None
+    return int(k_float)
+
+def parse_iter_arg(arg):
+    if not is_number(arg):
+        print("Incorrect maximum iteration!")
+        return None
+    iter_float = float(arg)
+    if iter_float != int(iter_float):
+        print("Incorrect maximum iteration!")
+        return None
+    iter_int = int(iter_float)
+    if iter_int < MIN_ITER or iter_int >= MAX_ITER:
+        print("Incorrect maximum iteration!")
+        return None
+    return iter_int
+
+#Vector reading and validation
 
 def read_vectors(file_arg=None):
-    vectors = []
-
     try:
-        if file_arg:
-            with open(file_arg, 'r') as f:
-                lines = f.readlines()
-        else:
-            lines = sys.stdin.readlines()
-
-        for line in lines:
-            line = line.strip()
-            if line:
-                try:
-                    vector = list(map(float, line.split(',')))
-                    vectors.append(vector)
-                except ValueError:
-                    print("An Error Has Occurred")
-                    return None
-
+        lines = read_lines(file_arg)
+        vectors = parse_vectors(lines)
+        if not vectors:
+            raise ValueError
+        return vectors
     except Exception:
         print("An Error Has Occurred")
         return None
 
-    if not vectors:
-        print("An Error Has Occurred")
-        return None
+def read_lines(file_arg):
+    if file_arg:
+        with open(file_arg, 'r') as f:
+            return f.readlines()
+    return sys.stdin.readlines()
 
+def parse_vectors(lines):
+    vectors = []
+    for line in lines:
+        line = line.strip()
+        if line:
+            try:
+                vector = list(map(float, line.split(',')))
+                vectors.append(vector)
+            except ValueError:
+                raise
     return vectors
-
 
 def validate_vector_dimensions(vectors):
     if not vectors:
         print("An Error Has Occurred")
         return False
-
-    vector_dim = len(vectors[0])
+    dim = len(vectors[0])
     for vector in vectors:
-        if len(vector) != vector_dim:
+        if len(vector) != dim:
             print("An Error Has Occurred")
             return False
-
     return True
 
+# K-Means Funcs
 
 def initialize_centroids(vectors, k):
-    if k >= len(vectors): 
-        print("Incorrect number of clusters!")  
+    if k >= len(vectors):
+        print("Incorrect number of clusters!")
         return None, None
-
-    centroids = [vectors[i][:] for i in range(k)]
-    return centroids, k
-
+    return [vectors[i][:] for i in range(k)], k
 
 def euclidean_distance(point, centroid):
     return sum((point[i] - centroid[i]) ** 2 for i in range(len(point))) ** 0.5
 
-
 def assign_clusters(vectors, centroids):
-    k = len(centroids)
-    clusters = [[] for _ in range(k)]
-
+    clusters = [[] for _ in range(len(centroids))]
     for vector in vectors:
-        distances = [euclidean_distance(vector, centroid) for centroid in centroids]
-        closest_centroid = distances.index(min(distances))
-        clusters[closest_centroid].append(vector)
-
+        distances = [euclidean_distance(vector, c) for c in centroids]
+        clusters[distances.index(min(distances))].append(vector)
     return clusters
 
-
 def update_centroids(clusters, centroids, eps):
-    flag = True
-    k = len(centroids)
     new_centroids = []
-
-    for j in range(k):
-        if clusters[j]:
-            dim = len(clusters[j][0])
-            new_centroid = [0] * dim
-            for point in clusters[j]:
-                for i in range(dim):
-                    new_centroid[i] += point[i]
-            for i in range(dim):
-                new_centroid[i] /= len(clusters[j])
-
-            if euclidean_distance(centroids[j], new_centroid) > eps:
-                flag = False
-
+    converged = True
+    for i, cluster in enumerate(clusters):
+        if cluster:
+            new_centroid = compute_mean(cluster)
+            if euclidean_distance(centroids[i], new_centroid) > eps:
+                converged = False
             new_centroids.append(new_centroid)
         else:
-            new_centroids.append(centroids[j][:])
+            print("An Error Has Occurred")
+            return None, False
+    return new_centroids, converged
 
-    return new_centroids, flag
-
+def compute_mean(cluster):
+    dim = len(cluster[0])
+    summed = [0] * dim
+    for point in cluster:
+        for i in range(dim):
+            summed[i] += point[i]
+    return [x / len(cluster) for x in summed]
 
 def print_results(clusters, centroids, verbose=True):
     for centroid in centroids:
-        formatted_centroid = [f"{x:.4f}" for x in centroid]
-        print(','.join(formatted_centroid))
-
+        print(','.join(f"{x:.4f}" for x in centroid))
 
 def kmeans_clustering(k, max_iter, vectors, eps=0.001, verbose=True):
     if not validate_vector_dimensions(vectors):
         return None
 
-    centroids, k = initialize_centroids(vectors, k)
+    centroids, _ = initialize_centroids(vectors, k)
     if centroids is None:
         return None
 
-    curr_iter = 0
-    converged = False
-
-    while not converged and curr_iter < max_iter:
-        curr_iter += 1
+    for iteration in range(max_iter):
         clusters = assign_clusters(vectors, centroids)
-        new_centroids, converged = update_centroids(clusters, centroids, eps)
-        centroids = new_centroids
+        centroids, converged = update_centroids(clusters, centroids, eps)
+        if converged and iteration > 0:
+            break
 
     print_results(clusters, centroids, verbose)
     return clusters
 
-
+#  Main 
 def main():
     k, max_iter, file_arg = parse_command_line_args()
     if k is None or max_iter is None:
@@ -203,13 +172,10 @@ def main():
     if vectors is None:
         return 1
 
-    clusters = kmeans_clustering(k, max_iter, vectors)
-    if clusters is None:
+    if kmeans_clustering(k, max_iter, vectors) is None:
         return 1
 
     return 0
 
-
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    sys.exit(main())
